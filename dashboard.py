@@ -1,4 +1,5 @@
 import streamlit as st
+import zipfile
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -42,18 +43,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Load data with caching
+
 @st.cache_data
 def load_data():
-    df = pd.read_csv('output/cleaned_online_retail.csv', parse_dates=['InvoiceDate'])
-    df['YearMonth'] = df['InvoiceDate'].dt.to_period('M').astype(str)
-    df['Year'] = df['InvoiceDate'].dt.year
-    df['Month'] = df['InvoiceDate'].dt.month_name()
-    df['Day'] = df['InvoiceDate'].dt.day_name()
-    df['Hour'] = df['InvoiceDate'].dt.hour
-    df['TotalPrice'] = df['UnitPrice'] * df['Quantity']
+    with zipfile.ZipFile('output/cleaned_online_retail.zip') as z:
+        with z.open('cleaned_online_retail.csv') as f:
+            df = pd.read_csv(f, parse_dates=['InvoiceDate'])
     return df
 
-df = load_data()
 
 # Sidebar with filters
 with st.sidebar:
