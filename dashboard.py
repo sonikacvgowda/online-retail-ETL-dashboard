@@ -1,5 +1,4 @@
 import streamlit as st
-import zipfile
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -43,14 +42,19 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Load data with caching
-
 @st.cache_data
 def load_data():
-    with zipfile.ZipFile('output/cleaned_online_retail.zip') as z:
-        with z.open('cleaned_online_retail.csv') as f:
-            df = pd.read_csv(f, parse_dates=['InvoiceDate'])
+    df = pd.read_csv(r'D:\ETL Project\data\Online Retail.csv', encoding='ISO-8859-1', parse_dates=['InvoiceDate'])
+
+    df['YearMonth'] = df['InvoiceDate'].dt.to_period('M').astype(str)
+    df['Year'] = df['InvoiceDate'].dt.year
+    df['Month'] = df['InvoiceDate'].dt.month_name()
+    df['Day'] = df['InvoiceDate'].dt.day_name()
+    df['Hour'] = df['InvoiceDate'].dt.hour
+    df['TotalPrice'] = df['UnitPrice'] * df['Quantity']
     return df
 
+df = load_data()
 
 # Sidebar with filters
 with st.sidebar:
@@ -70,7 +74,7 @@ with st.sidebar:
     selected_countries = st.multiselect(
         "🌍 Countries", 
         options=all_countries,
-        default=['United Kingdom']
+       
     )
     
     # Product selection
@@ -279,6 +283,20 @@ with tab3:
         st.pyplot(fig)
     else:
         st.info("Select multiple countries to compare")
+    
+
+  # Group by Country to get total sales  
+
+country_sales = filtered_df.groupby('Country')['TotalPrice'].sum().sort_values(ascending=False).reset_index()
+fig2, ax2 = plt.subplots(figsize=(12, 6))
+ax2.bar(country_sales['Country'], country_sales['TotalPrice'], color='teal')
+ax2.set_title("Total Sales by Country")
+ax2.set_xlabel("Country")
+ax2.set_ylabel("Sales (£)")
+plt.xticks(rotation=45)
+plt.tight_layout()
+st.pyplot(fig2)
+
 
 with tab4:
     st.subheader("Customer Insights")
